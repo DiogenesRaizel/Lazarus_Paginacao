@@ -1,0 +1,48 @@
+object DM: TDM
+  OnCreate = DataModuleCreate
+  OldCreateOrder = False
+  Height = 513
+  HorizontalOffset = 0
+  VerticalOffset = 0
+  Width = 621
+  object SQLite3Connection1: TSQLite3Connection
+    Connected = False
+    LoginPrompt = False
+    KeepConnection = False
+    Transaction = SQLTransaction1
+    AlwaysUseBigint = False
+    Left = 96
+    Top = 8
+  end
+  object SQLTransaction1: TSQLTransaction
+    Active = False
+    Database = SQLite3Connection1
+    Left = 320
+    Top = 16
+  end
+  object qryExec: TSQLQuery
+    FieldDefs = <>
+    Params = <>
+    Macros = <>
+    Left = 88
+    Top = 224
+  end
+  object qryNomes: TSQLQuery
+    FieldDefs = <>
+    Database = SQLite3Connection1
+    Transaction = SQLTransaction1
+    Params = <>
+    Macros = <>
+    Left = 312
+    Top = 224
+  end
+  object qryCidades: TSQLQuery
+    FieldDefs = <>
+    Database = SQLite3Connection1
+    Transaction = SQLTransaction1
+    Params = <>
+    Macros = <>
+    Left = 312
+    Top = 320
+  end
+end

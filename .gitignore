@@ -1,0 +1,15 @@
+# Arquivos gerados pelo Lazarus/FPC
+/lib/
+/bin/Lazarus_Paginacao
+*.o
+*.ppu
+*.compiled
+*.or
+*.lps
+
+# Cópias e backups locais
+/backup/
+/src/backup/
+/src (cópia)/
+/dados/dados.db
+/src/udm (cópia).pas

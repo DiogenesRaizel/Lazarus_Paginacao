@@ -1,0 +1,27 @@
+object frmMain: TfrmMain
+  Left = 0
+  Height = 650
+  Top = 0
+  Width = 1280
+  Caption = 'Principal'
+  ClientHeight = 650
+  ClientWidth = 1280
+  LCLVersion = '5.99.0.0'
+  OnCreate = FormCreate
+  object PageControl1: TPageControl
+    Left = 0
+    Height = 650
+    Top = 0
+    Width = 1280
+    ActivePage = tsCidades
+    Align = alClient
+    TabIndex = 1
+    TabOrder = 0
+    object tsNomes: TTabSheet
+      Caption = 'Nomes'
+    end
+    object tsCidades: TTabSheet
+      Caption = 'Cidades'
+    end
+  end
+end

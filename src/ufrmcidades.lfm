@@ -1,0 +1,65 @@
+object frmCidades: TfrmCidades
+  Left = 0
+  Height = 575
+  Top = 0
+  Width = 1175
+  Caption = 'Cidades'
+  ClientHeight = 575
+  ClientWidth = 1175
+  LCLVersion = '5.99.0.0'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnKeyDown = FormKeyDown
+  object dbgCidades: TDBGrid
+    Left = 0
+    Height = 402
+    Top = 128
+    Width = 1265
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Color = clWindow
+    Columns = <>
+    DataSource = dsCidades
+    TabOrder = 0
+  end
+  object pnTop: TPanel
+    Left = 0
+    Height = 131
+    Top = 0
+    Width = 1175
+    Align = alTop
+    ClientHeight = 131
+    ClientWidth = 1175
+    TabOrder = 1
+    object pnNavigator: TPanel
+      Left = 1
+      Height = 52
+      Top = 78
+      Width = 1173
+      Align = alBottom
+      BevelOuter = bvNone
+      TabOrder = 0
+    end
+    object btnAlternarTabela: TButton
+      Left = 24
+      Height = 35
+      Top = 10
+      Width = 130
+      Caption = 'Fechar Tabela'
+      TabOrder = 1
+      OnClick = btnAlternarTabelaClick
+    end
+  end
+  object pnBottom: TPanel
+    Left = 0
+    Height = 39
+    Top = 536
+    Width = 1175
+    Align = alBottom
+    TabOrder = 2
+  end
+  object dsCidades: TDataSource
+    DataSet = DM.qryNomes
+    Left = 192
+    Top = 240
+  end
+end
