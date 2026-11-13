@@ -10,8 +10,10 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, uMain, uDM, uPaginacaoDBGrid, uPaginadorSQL, ufrmnomes, ufrmcidades
-  { you can add units after this };
+  Forms, uMain, uDM, uPaginacaoDBGrid, uPaginadorSQL, ufrmnomes, ufrmcidades,
+  uModelBase, uNomesModel, uCidadesModel, uControllerBase, uNomesController,
+  uCidadesController, uRealcePesquisaDBGrid, uBancoDados, uTiposPesquisa,
+  uPesquisaEdit, uVisualizacaoCadastro, uTiposCadastro, uConfiguracaoApp;
 
 {$R *.res}
 

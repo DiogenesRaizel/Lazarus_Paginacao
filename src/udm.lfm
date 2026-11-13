@@ -11,14 +11,14 @@ object DM: TDM
     KeepConnection = False
     Transaction = SQLTransaction1
     AlwaysUseBigint = False
-    Left = 96
-    Top = 8
+    Left = 104
+    Top = 32
   end
   object SQLTransaction1: TSQLTransaction
     Active = False
     Database = SQLite3Connection1
-    Left = 320
-    Top = 16
+    Left = 328
+    Top = 32
   end
   object qryExec: TSQLQuery
     FieldDefs = <>
@@ -27,22 +27,18 @@ object DM: TDM
     Left = 88
     Top = 224
   end
-  object qryNomes: TSQLQuery
-    FieldDefs = <>
-    Database = SQLite3Connection1
-    Transaction = SQLTransaction1
-    Params = <>
-    Macros = <>
-    Left = 312
-    Top = 224
-  end
   object qryCidades: TSQLQuery
     FieldDefs = <>
-    Database = SQLite3Connection1
-    Transaction = SQLTransaction1
     Params = <>
     Macros = <>
-    Left = 312
-    Top = 320
+    Left = 440
+    Top = 224
+  end
+  object qryNomes: TSQLQuery
+    FieldDefs = <>
+    Params = <>
+    Macros = <>
+    Left = 272
+    Top = 224
   end
 end

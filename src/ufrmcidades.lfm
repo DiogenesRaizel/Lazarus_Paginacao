@@ -11,15 +11,20 @@ object frmCidades: TfrmCidades
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
   object dbgCidades: TDBGrid
-    Left = 0
-    Height = 402
-    Top = 128
-    Width = 1265
-    Anchors = [akTop, akLeft, akRight, akBottom]
+    Left = 11
+    Height = 370
+    Top = 142
+    Width = 1153
+    Align = alClient
+    BorderSpacing.Left = 11
+    BorderSpacing.Top = 11
+    BorderSpacing.Right = 11
+    BorderSpacing.Bottom = 11
     Color = clWindow
     Columns = <>
     DataSource = dsCidades
     TabOrder = 0
+    OnTitleClick = dbgCidadesTitleClick
   end
   object pnTop: TPanel
     Left = 0
@@ -39,26 +44,24 @@ object frmCidades: TfrmCidades
       BevelOuter = bvNone
       TabOrder = 0
     end
-    object btnAlternarTabela: TButton
-      Left = 24
-      Height = 35
-      Top = 10
-      Width = 130
-      Caption = 'Fechar Tabela'
+    object edtFiltro: TEdit
+      Left = 8
+      Height = 34
+      Top = 8
+      Width = 544
       TabOrder = 1
-      OnClick = btnAlternarTabelaClick
+      OnChange = edtFiltroChange
     end
   end
   object pnBottom: TPanel
     Left = 0
-    Height = 39
-    Top = 536
+    Height = 52
+    Top = 523
     Width = 1175
     Align = alBottom
     TabOrder = 2
   end
   object dsCidades: TDataSource
-    DataSet = DM.qryNomes
     Left = 192
     Top = 240
   end

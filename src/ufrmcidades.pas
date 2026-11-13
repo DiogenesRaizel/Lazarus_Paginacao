@@ -6,28 +6,32 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Dialogs, ExtCtrls, DBGrids,
-  StdCtrls, DB, uDM, uPaginacaoDBGrid, uPaginadorSQL;
+  StdCtrls, DB, uDM, uCidadesController, uRealcePesquisaDBGrid;
 
 type
 
   { TfrmCidades }
 
   TfrmCidades = class(TForm)
-    btnAlternarTabela: TButton;
     dsCidades: TDataSource;
     dbgCidades: TDBGrid;
+    edtFiltro: TEdit;
     pnBottom: TPanel;
     pnNavigator: TPanel;
     pnTop: TPanel;
-    procedure btnAlternarTabelaClick(Sender: TObject);
+    procedure dbgCidadesTitleClick(Column: TColumn);
+    procedure edtFiltroChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure dsCidadesDataChange(Sender: TObject; Field: TField);
   private
-    FPaginacao: TPaginacaoDBGrid;
-    FPaginador: TPaginadorSQL;
+    FController: TCidadesController;
+    FRealce: TRealcePesquisaDBGrid;
+    FIDRegistroAtual: Int64;
 
   public
+    procedure GarantirConsultaAtiva;
 
   end;
 
@@ -42,49 +46,59 @@ implementation
 
 procedure TfrmCidades.FormCreate(Sender: TObject);
 begin
-  FPaginacao := TPaginacaoDBGrid.Create(pnNavigator);
+  FController := TCidadesController.Create(DM.CidadesModel, pnNavigator, dbgCidades);
 
-  FPaginador := TPaginadorSQL.Create(
-    DM.qryCidades,
-    FPaginacao,
-    dbgCidades
-  );
+  dsCidades.DataSet := FController.DataSet;
 
-  FPaginador.SQLBase := 'SELECT ID, Cidade, UF FROM cidades';
-  FPaginador.SQLContagem := 'SELECT COUNT(*) FROM cidades';
-  FPaginador.OrdenarPor := 'ID';
+  FRealce := TRealcePesquisaDBGrid.Create(dbgCidades, DM.CidadesModel, edtFiltro);
 
   KeyPreview := True;
+  FController.Inicializar;
 
-  FPaginador.Abrir;
+  FIDRegistroAtual := 0;
+  dsCidades.OnDataChange := @dsCidadesDataChange;
+end;
+
+procedure TfrmCidades.edtFiltroChange(Sender: TObject);
+begin
+  if FController <> nil then
+    FController.Pesquisar(edtFiltro.Text);
+end;
+
+procedure TfrmCidades.dbgCidadesTitleClick(Column: TColumn);
+begin
+  if FController <> nil then
+    FController.OrdenarPorCampo(Column.FieldName);
 end;
 
 procedure TfrmCidades.FormDestroy(Sender: TObject);
 begin
-  FreeAndNil(FPaginador);
-  FreeAndNil(FPaginacao);
+  FreeAndNil(FRealce);
+  FreeAndNil(FController);
 end;
 
-procedure TfrmCidades.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmCidades.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  FPaginador.TratarAtalho(Key, Shift);
+  if FController <> nil then
+    FController.TratarAtalho(Key, Shift);
 end;
 
-procedure TfrmCidades.btnAlternarTabelaClick(Sender: TObject);
+procedure TfrmCidades.dsCidadesDataChange(Sender: TObject; Field: TField);
 begin
-  if not DM.qryCidades.Active then
-  begin
-    FPaginador.Abrir;
-    pnNavigator.Visible := True;
-    btnAlternarTabela.Caption := 'Fechar Tabela';
-  end
-  else
-  begin
-    FPaginador.Fechar;
-    pnNavigator.Visible := False;
-    btnAlternarTabela.Caption := 'Abrir Tabela';
-  end;
+  if not dsCidades.DataSet.Active then
+    Exit;
+
+  if dsCidades.DataSet.IsEmpty then
+    Exit;
+
+  FIDRegistroAtual := dsCidades.DataSet.FieldByName('ID').AsLargeInt;
+end;
+
+procedure TfrmCidades.GarantirConsultaAtiva;
+begin
+  if not dsCidades.DataSet.Active then
+    FController.RestaurarConsulta(FIDRegistroAtual);
 end;
 
 end.
+

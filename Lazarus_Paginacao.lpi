@@ -76,7 +76,73 @@
         <Filename Value="src/ufrmcidades.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmCidades"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Model/umodelbase.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uModelBase"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Model/unomesmodel.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uNomesModel"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Model/ucidadesmodel.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uCidadesModel"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Controller/ucontrollerbase.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uControllerBase"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Controller/unomescontroller.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uNomesController"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Controller/ucidadescontroller.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uCidadesController"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/View/urealcepesquisadbgrid.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uRealcePesquisaDBGrid"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/DataModule/ubancodados.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uBancoDados"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Model/utipospesquisa.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uTiposPesquisa"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/View/upesquisaedit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uPesquisaEdit"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/View/uvisualizacaocadastro.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uVisualizacaoCadastro"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Model/utiposcadastro.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uTiposCadastro"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/View/uconfiguracaoapp.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uConfiguracaoApp"/>
       </Unit>
     </Units>
   </ProjectOptions>
@@ -87,7 +153,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="src"/>
+      <OtherUnitFiles Value="src;src/Model;src/Controller;src/View;src/DataModule"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
