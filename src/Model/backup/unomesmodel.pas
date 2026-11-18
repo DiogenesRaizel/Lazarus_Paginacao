@@ -58,7 +58,7 @@ begin
   );
 end;
 
-function TNomesModel.Excluir(AID: Integer): Integer;
+function TNomesModel.Excluir(AID: Int64): Integer;
 begin
   Result := ExecutarComando(
     'DELETE FROM nomes WHERE ID = :p0',

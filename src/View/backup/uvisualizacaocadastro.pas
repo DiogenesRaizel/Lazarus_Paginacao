@@ -5,118 +5,188 @@ unit uVisualizacaoCadastro;
 interface
 
 uses
-  Classes, SysUtils, Forms, ExtCtrls, ComCtrls, Controls, uTiposCadastro;
+  ComCtrls, StdCtrls, DB, ExtCtrls,
+  uTiposCadastro;
 
 type
-  TModoCadastro = (
-    mcNavegandoTabela,
-    mcNavegandoCadastro,
-    mcInclusaoTabela,
-    mcEdicaoTabela,
-    mcInclusaoCadastro,
-    mcEdicaoCadastro
-  );
 
-  TModoApresentacao = (maTabela, maCadastro);
+  TBotoesCadastro = record
+    Novo: TButton;
+    Alterar: TButton;
+    Excluir: TButton;
+    Salvar: TButton;
+    SalvarNovo: TButton;
+    Cancelar: TButton;
+    Primeiro: TButton;
+    Anterior: TButton;
+    Proximo: TButton;
+    Ultimo: TButton;
+    Tabela: TButton;
+  end;
 
   { TVisualizacaoCadastro }
 
   TVisualizacaoCadastro = class
   private
-    FFormulario: TCustomForm;
     FPageControl: TPageControl;
     FPaginaTabela: TTabSheet;
     FPaginaCadastro: TTabSheet;
-    FPainelTopoTabela: TPanel;
-    FPainelTopoCadastro: TPanel;
-    FPainelBotoesTabela: TPanel;
-    FPainelBotoesCadastro: TPanel;
+    FPnRodapeCadastro : TPanel;
+    FDataSource: TDataSource;
+
     FModoApresentacao: TModoApresentacao;
+    FModoCadastro: TModoCadastro;
+
+    FBtnNovo: TButton;
+    FBtnAlterar: TButton;
+    FBtnExcluir: TButton;
+    FBtnSalvar: TButton;
+    FBtnSalvarNovo: TButton;
+    FBtnCancelar: TButton;
+
+    FBtnPrimeiro: TButton;
+    FBtnAnterior: TButton;
+    FBtnProximo: TButton;
+    FBtnUltimo: TButton;
+
+    FBtnTabela: TButton;
 
   public
-    constructor Create(AFormulario: TCustomForm;
-      APageControl: TPageControl;
+    constructor Create(APageControl: TPageControl;
       APaginaTabela, APaginaCadastro: TTabSheet;
-      APainelTopoTabela, APainelTopoCadastro: TPanel;
-      APainelBotoesTabela, APainelBotoesCadastro: TPanel);
+      APnRodapeCadastro: TPanel;
+      ADataSource: TDataSource;
+      const ABotoes: TBotoesCadastro);
 
     procedure Configurar(AModoCadastro: TModoCadastro);
+    procedure AtualizarBotoesNavegacao;
+
 
     property ModoApresentacao: TModoApresentacao read FModoApresentacao;
   end;
 
 implementation
 
-constructor TVisualizacaoCadastro.Create(AFormulario: TCustomForm;
-  APageControl: TPageControl;
+constructor TVisualizacaoCadastro.Create(APageControl: TPageControl;
   APaginaTabela, APaginaCadastro: TTabSheet;
-  APainelTopoTabela, APainelTopoCadastro: TPanel;
-  APainelBotoesTabela, APainelBotoesCadastro: TPanel);
+  APnRodapeCadastro: TPanel;
+  ADataSource: TDataSource;
+  const ABotoes: TBotoesCadastro);
 begin
   inherited Create;
 
-  FFormulario := AFormulario;
   FPageControl := APageControl;
   FPaginaTabela := APaginaTabela;
   FPaginaCadastro := APaginaCadastro;
-  FPainelTopoTabela := APainelTopoTabela;
-  FPainelTopoCadastro := APainelTopoCadastro;
-  FPainelBotoesTabela := APainelBotoesTabela;
-  FPainelBotoesCadastro := APainelBotoesCadastro;
+  APnRodapeCadastro := APnRodapeCadastro;
+  FDataSource := ADataSource;
 
-  if FPageControl.ActivePage = FPaginaCadastro then
-    FModoApresentacao := maCadastro
-  else
+  if FPageControl.ActivePage = FPaginaTabela then
+  begin
     FModoApresentacao := maTabela;
+    FModoCadastro := mcNavegandoTabela;
+  end
+  else
+  begin
+    FModoApresentacao := maCadastro;
+    FModoCadastro := mcNavegandoCadastro;
+  end;
+
+  FBtnNovo := ABotoes.Novo;
+  FBtnAlterar := ABotoes.Alterar;
+  FBtnExcluir := ABotoes.Excluir;
+  FBtnSalvar := ABotoes.Salvar;
+  FBtnSalvarNovo := ABotoes.SalvarNovo;
+  FBtnCancelar := ABotoes.Cancelar;
+
+  FBtnPrimeiro := ABotoes.Primeiro;
+  FBtnAnterior := ABotoes.Anterior;
+  FBtnProximo := ABotoes.Proximo;
+  FBtnUltimo := ABotoes.Ultimo;
+
+  FBtnTabela := ABotoes.Tabela;
+end;
+
+procedure TVisualizacaoCadastro.AtualizarBotoesNavegacao;
+var
+  DataSet: TDataSet;
+  TemRegistro, Navegando: Boolean;
+begin
+  DataSet := FDataSource.DataSet;
+
+  TemRegistro := Assigned(DataSet);
+
+  if TemRegistro then
+    TemRegistro := DataSet.Active and not DataSet.IsEmpty;
+
+  Navegando := FModoCadastro in [
+    mcNavegandoTabela,
+    mcNavegandoCadastro
+  ];
+
+  FBtnAlterar.Enabled := TemRegistro and Navegando;
+  FBtnExcluir.Enabled := TemRegistro and Navegando;
+
+  FBtnPrimeiro.Enabled := False;
+  FBtnAnterior.Enabled := False;
+  FBtnProximo.Enabled := False;
+  FBtnUltimo.Enabled := False;
+
+  if TemRegistro and Navegando then
+  begin
+    FBtnPrimeiro.Enabled := not DataSet.BOF;
+    FBtnAnterior.Enabled := not DataSet.BOF;
+    FBtnProximo.Enabled := not DataSet.EOF;
+    FBtnUltimo.Enabled := not DataSet.EOF;
+  end;
 end;
 
 procedure TVisualizacaoCadastro.Configurar(AModoCadastro: TModoCadastro);
 begin
-  FPageControl.BorderSpacing.Top := 0;
+  FModoCadastro := AModoCadastro;
 
   case AModoCadastro of
-    mcInclusaoTabela, mcEdicaoTabela,
-    mcInclusaoCadastro, mcEdicaoCadastro:
-      begin
-        FPainelTopoTabela.Visible := False;
-        FPainelTopoCadastro.Visible := False;
-        FPainelBotoesTabela.Visible := False;
-        FPainelBotoesCadastro.Visible := True;
-
-        FPageControl.BorderSpacing.Top := 11;
-        FPageControl.ActivePage := FPaginaCadastro;
-      end;
 
     mcNavegandoTabela:
       begin
-        FPainelTopoTabela.Visible := True;
-        FPainelTopoCadastro.Visible := False;
-        FPainelBotoesCadastro.Visible := False;
-        FPainelBotoesTabela.Visible := True;
-
         FPageControl.ActivePage := FPaginaTabela;
+        FModoApresentacao := maTabela;
       end;
 
-    mcNavegandoCadastro:
+    mcNavegandoCadastro,
+    mcInclusaoTabela, mcEdicaoTabela,
+    mcInclusaoCadastro, mcEdicaoCadastro:
       begin
-        FPainelTopoTabela.Visible := False;
-        FPainelTopoCadastro.Visible := True;
-        FPainelBotoesCadastro.Visible := False;
-        FPainelBotoesTabela.Visible := True;
-
         FPageControl.ActivePage := FPaginaCadastro;
-        FPageControl.Align := alNone;
-        FPageControl.Align := alClient;
+        FModoApresentacao := maCadastro;
       end;
   end;
 
-  if AModoCadastro = mcNavegandoTabela then
-    FModoApresentacao := maTabela
-  else
-    FModoApresentacao := maCadastro;
+  case AModoCadastro of
 
-  FFormulario.Repaint;
+    mcNavegandoTabela, mcNavegandoCadastro:
+      begin
+        FBtnNovo.Enabled := True;
+
+        FBtnSalvar.Enabled := False;
+        FBtnSalvarNovo.Enabled := False;
+        FBtnCancelar.Enabled := False;
+      end;
+
+    mcInclusaoTabela, mcInclusaoCadastro,
+    mcEdicaoTabela, mcEdicaoCadastro:
+      begin
+        FBtnNovo.Enabled := False;
+
+        FBtnSalvar.Enabled := True;
+        FBtnSalvarNovo.Enabled := True;
+        FBtnCancelar.Enabled := True;
+      end;
+  end;
+
+  FBtnTabela.Enabled := AModoCadastro = mcNavegandoCadastro;
+
+  AtualizarBotoesNavegacao;
 end;
 
 end.
-

@@ -41,4 +41,51 @@ object DM: TDM
     Left = 272
     Top = 224
   end
+  object SQLQuery1: TSQLQuery
+    MaxIndexesCount = 4
+    FieldDefs = <    
+      item
+        Name = 'ID'
+        DataType = ftInteger
+        Precision = -1
+      end    
+      item
+        Name = 'Nome'
+        DataType = ftString
+        Precision = -1
+        Size = 60
+      end    
+      item
+        Name = 'CidadeID'
+        DataType = ftInteger
+        Precision = -1
+      end    
+      item
+        Name = 'Cidade'
+        DataType = ftString
+        Precision = -1
+        Size = 100
+      end>
+    Database = SQLite3Connection1
+    Transaction = SQLTransaction1
+    SQL.Strings = (
+      'SELECT n.ID AS ID, n.Nome AS Nome, c.ID AS CidadeID, c.Cidade AS Cidade'
+      'FROM nomes n'
+      'INNER JOIN cidades c ON c.ID = n.CidadeID;'
+      ''
+    )
+    Params = <>
+    Macros = <>
+    Left = 413
+    Top = 351
+    object SQLQuery1ID: TLongintField
+      FieldKind = fkData
+      FieldName = 'ID'
+      Index = 0
+      LookupCache = False
+      ProviderFlags = [pfInUpdate, pfInWhere]
+      ReadOnly = False
+      Required = False
+    end
+  end
 end

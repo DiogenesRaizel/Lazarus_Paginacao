@@ -8,43 +8,42 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, DBGrids,
   StdCtrls, ComCtrls, DB, LCLType, uDM, uNomesController,
   uRealcePesquisaDBGrid, uTiposPesquisa, uPesquisaEdit,
-  uVisualizacaoCadastro, uTiposCadastro;
+  uVisualizacaoCadastro, uTiposCadastro, Types, uOrdenacaoDBGrid;
 
 type
   { TfrmNomes }
 
   TfrmNomes = class(TForm)
     btnAlterar: TButton;
+    btnAnterior: TButton;
+    btnCancelar: TButton;
     btnExcluir: TButton;
     btnNovo: TButton;
-    btnSalvar: TButton;
-    btnCancelar: TButton;
-    btnSalvarNovo: TButton;
-    btnTabela: TButton;
-    btnAnterior: TButton;
     btnPrimeiro: TButton;
     btnProximo: TButton;
+    btnSalvar: TButton;
+    btnSalvarNovo: TButton;
     btnUltimo: TButton;
+    btnTabela: TButton;
     dbgNomes: TDBGrid;
     dsNomes: TDataSource;
-    edtNome: TEdit;
     edtCidade: TEdit;
     edtFiltro: TEdit;
-    Label1: TLabel;
+    edtNome: TEdit;
+    GroupBox1: TGroupBox;
+    lbCidadeAutoComplete: TListBox;
+    lblCidade: TLabel;
     lblID: TLabel;
     lblNome: TLabel;
-    lblCidade: TLabel;
     lblPesquisar: TLabel;
-    lbCidadeAutoComplete: TListBox;
+    Panel1: TPanel;
     pcNomes: TPageControl;
-    pnButtomCadastro: TPanel;
-    pnButtomTabela: TPanel;
     pnNavigator: TPanel;
+    pnNavigatorCadastro: TPanel;
     pnTop: TPanel;
-    pnTopCadastro: TPanel;
     StatusBar1: TStatusBar;
-    tsTabela: TTabSheet;
     tsCadastro: TTabSheet;
+    tsTabela: TTabSheet;
     procedure btnAlterarClick(Sender: TObject);
     procedure btnAnteriorClick(Sender: TObject);
     procedure btnCancelarClick(Sender: TObject);
@@ -67,16 +66,17 @@ type
     FController: TNomesController;
     FRealce: TRealcePesquisaDBGrid;
     FVisualizacao: TVisualizacaoCadastro;
+    FOrdenacao: TOrdenacaoDBGrid;
     FPesquisaCidade: TPesquisaEdit;
     FIDRegistroAtual: Int64;
     FCarregandoCadastro: Boolean;
     function ConsultarSugestoesCidade(const Valor: string): TSugestaoPesquisaArray;
     procedure MostrarCadastro;
     procedure LimparCadastro;
-    procedure AtualizarBotoesNavegacao;
     procedure VerificarAlteracao(Sender: TObject);
     procedure SalvarRegistro(AContinuarIncluindo: Boolean);
     procedure AtualizarStatus(const Texto: string);
+    procedure OcultarColunaCidadeID;
   public
     procedure GarantirConsultaAtiva;
   end;
@@ -91,6 +91,9 @@ implementation
 { TfrmNomes }
 
 procedure TfrmNomes.FormCreate(Sender: TObject);
+var
+  Botoes: TBotoesCadastro;
+  I: Integer;
 begin
   // Estado inicial
   FIDRegistroAtual := 0;
@@ -102,11 +105,28 @@ begin
   pcNomes.ActivePageIndex := 0;
   pcNomes.ShowTabs := False;
 
-  // Configuração da visualização
-  FVisualizacao := TVisualizacaoCadastro.Create(Self, pcNomes, tsTabela,
-    tsCadastro, pnTop, pnTopCadastro, pnButtomTabela, pnButtomCadastro);
+  btnSalvar.Enabled:= False;
+  btnSalvarNovo.Enabled:= False;
+  btnCancelar.Enabled:= False;
 
-  pnTopCadastro.Visible := False;
+  // Configuração da visualização
+
+  Botoes.Novo := btnNovo;
+  Botoes.Alterar := btnAlterar;
+  Botoes.Excluir := btnExcluir;
+  Botoes.Salvar := btnSalvar;
+  Botoes.SalvarNovo := btnSalvarNovo;
+  Botoes.Cancelar := btnCancelar;
+  Botoes.Primeiro := btnPrimeiro;
+  Botoes.Anterior := btnAnterior;
+  Botoes.Proximo := btnProximo;
+  Botoes.Ultimo := btnUltimo;
+  Botoes.Tabela := btnTabela;
+
+  FVisualizacao := TVisualizacaoCadastro.Create(
+    pcNomes, tsTabela, tsCadastro, pnNavigatorCadastro, dsNomes, Botoes
+  );
+
   lbCidadeAutoComplete.Visible := False;
 
   // Pesquisa de cidades
@@ -129,15 +149,11 @@ begin
   // Inicialização da consulta
   FController.Inicializar;
 
-  // Estado inicial dos botões
-  AtualizarBotoesNavegacao;
-
   // Estado inicial do status bar
   AtualizarStatus('Navegando');
 
-  // Oculta a coluna CidadeID
-  if dbgNomes.Columns.ColumnByFieldname('CidadeID') <> nil then
-    dbgNomes.Columns.ColumnByFieldname('CidadeID').Visible := False;
+  // Configura as colunas da DBGrid
+  FOrdenacao := TOrdenacaoDBGrid.Create(dbgNomes);
 end;
 
 procedure TfrmNomes.FormDestroy(Sender: TObject);
@@ -146,6 +162,7 @@ begin
   FreeAndNil(FRealce);
   FreeAndNil(FController);
   FreeAndNil(FVisualizacao);
+  FreeAndNil(FOrdenacao);
 end;
 
 procedure TfrmNomes.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -180,7 +197,6 @@ begin
     );
 
     lbCidadeAutoComplete.Visible := False;
-    AtualizarBotoesNavegacao;
   finally
     FCarregandoCadastro := False;
   end;
@@ -197,21 +213,6 @@ begin
   finally
     FCarregandoCadastro := False;
   end;
-end;
-
-procedure TfrmNomes.AtualizarBotoesNavegacao;
-var
-  TemRegistro: Boolean;
-begin
-  TemRegistro := dsNomes.DataSet.Active and
-    not dsNomes.DataSet.IsEmpty;
-
-  btnAlterar.Enabled := TemRegistro;
-  btnExcluir.Enabled := TemRegistro;
-  btnPrimeiro.Enabled := TemRegistro and not dsNomes.DataSet.BOF;
-  btnAnterior.Enabled := TemRegistro and not dsNomes.DataSet.BOF;
-  btnProximo.Enabled := TemRegistro and not dsNomes.DataSet.EOF;
-  btnUltimo.Enabled := TemRegistro and not dsNomes.DataSet.EOF;
 end;
 
 procedure TfrmNomes.VerificarAlteracao(Sender: TObject);
@@ -269,6 +270,16 @@ begin
   StatusBar1.SimpleText := '  ' + Texto;
 end;
 
+procedure TfrmNomes.OcultarColunaCidadeID;
+var
+  Coluna: TColumn;
+begin
+  Coluna := dbgNomes.Columns.ColumnByFieldname('CidadeID');
+
+  if Assigned(Coluna) then
+    Coluna.Visible := False;
+end;
+
 procedure TfrmNomes.GarantirConsultaAtiva;
 begin
   FController.GarantirConsultaAtiva(FIDRegistroAtual);
@@ -284,15 +295,11 @@ procedure TfrmNomes.dbgNomesTitleClick(Column: TColumn);
 begin
   if FController <> nil then
     FController.OrdenarPorCampo(Column.FieldName);
-
-  // Oculta a coluna CidadeID
-  if dbgNomes.Columns.ColumnByFieldname('CidadeID') <> nil then
-    dbgNomes.Columns.ColumnByFieldname('CidadeID').Visible := False;
 end;
 
 procedure TfrmNomes.dsNomesDataChange(Sender: TObject; Field: TField);
 begin
-  AtualizarBotoesNavegacao;
+  FVisualizacao.AtualizarBotoesNavegacao;
 
   if not dsNomes.DataSet.Active then
   begin
@@ -436,7 +443,6 @@ begin
     begin
       FIDRegistroAtual := 0;
       LimparCadastro;
-      AtualizarBotoesNavegacao;
     end;
   except
     on E: Exception do

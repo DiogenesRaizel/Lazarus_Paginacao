@@ -156,22 +156,22 @@ end;
 procedure TControllerBase.AtualizarTitulosOrdenacao(Sender: TObject);
 var
   I: Integer;
-  Titulo: string;
-  Seta: string;
+  Titulo, Seta: string;
 begin
   if (FGrade = nil) or (FPaginador = nil) then
     Exit;
 
   for I := 0 to FGrade.Columns.Count - 1 do
   begin
-    Titulo := FGrade.Columns[I].Title.Caption;
+    Titulo := StringReplace(
+      FGrade.Columns[I].FieldName,
+      '_', ' ', [rfReplaceAll]
+    );
 
-    if Copy(Titulo, 1, 2) = '↓ ' then
-      Delete(Titulo, 1, 2)
-    else if Copy(Titulo, 1, 2) = '↑ ' then
-      Delete(Titulo, 1, 2);
-
-    if SameText(FGrade.Columns[I].FieldName, FPaginador.CampoOrdenacao) then
+    if SameText(
+      FGrade.Columns[I].FieldName,
+      FPaginador.CampoOrdenacao
+    ) then
     begin
       if FPaginador.OrdemAscendente then
         Seta := '↓ '

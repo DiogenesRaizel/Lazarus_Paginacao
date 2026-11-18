@@ -70,7 +70,8 @@ function TNomesModel.SQLBase: string;
 var
   FiltroSQL: string;
 begin
-  Result := 'SELECT n.ID AS ID, n.Nome AS Nome, c.ID AS CidadeID, c.Cidade AS Cidade ' +
+//  Result := 'SELECT n.ID AS ID, n.Nome AS Nome, c.ID AS CidadeID, c.Cidade AS Cidade ' +
+  Result := 'SELECT n.ID AS ID, n.Nome AS Nome, c.ID AS CidadeID, c.ID AS ID_Cidade, c.Cidade AS Cidade ' +
     'FROM nomes n ' +
     'INNER JOIN cidades c ON c.ID = n.CidadeID';
 

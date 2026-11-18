@@ -13,7 +13,7 @@ uses
   Forms, uMain, uDM, uPaginacaoDBGrid, uPaginadorSQL, ufrmnomes, ufrmcidades,
   uModelBase, uNomesModel, uCidadesModel, uControllerBase, uNomesController,
   uCidadesController, uRealcePesquisaDBGrid, uBancoDados, uTiposPesquisa,
-  uPesquisaEdit, uVisualizacaoCadastro, uTiposCadastro, uConfiguracaoApp;
+  uPesquisaEdit, uVisualizacaoCadastro, uTiposCadastro, uConfiguracaoApp, uOrdenacaoDBGrid;
 
 {$R *.res}
 

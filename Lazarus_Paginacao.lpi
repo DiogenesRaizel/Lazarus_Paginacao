@@ -144,6 +144,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="uConfiguracaoApp"/>
       </Unit>
+      <Unit>
+        <Filename Value="src/View/uordenacaodbgrid.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uOrdenacaoDBGrid"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

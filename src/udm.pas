@@ -5,7 +5,7 @@ unit uDM;
 interface
 
 uses
-  Classes, SysUtils, SQLite3Conn, SQLDB,
+  Classes, SysUtils, SQLite3Conn, SQLDB, DB,
   uBancoDados, uNomesModel, uCidadesModel;
 
 type
@@ -16,6 +16,8 @@ type
     qryExec: TSQLQuery;
     qryCidades: TSQLQuery;
     qryNomes: TSQLQuery;
+    SQLQuery1: TSQLQuery;
+    SQLQuery1ID: TLongintField;
     SQLTransaction1: TSQLTransaction;
     procedure DataModuleCreate(Sender: TObject);
   public
