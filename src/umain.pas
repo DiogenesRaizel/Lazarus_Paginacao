@@ -6,7 +6,7 @@ interface
 
 uses
   SysUtils, Forms, Controls, Dialogs, ComCtrls,
-  ufrmnomes, ufrmcidades, Classes;
+  ufrmnomes, Classes;
 
 type
 
@@ -38,20 +38,21 @@ begin
   frmNomes.BorderStyle := bsNone;
   frmNomes.Align := alClient;
   frmNomes.Show;
-
+  {
   frmCidades := TfrmCidades.Create(Self);
   frmCidades.Parent := tsCidades;
   frmCidades.BorderStyle := bsNone;
   frmCidades.Align := alClient;
   frmCidades.Show;
+}
 end;
 
 procedure TfrmMain.pgMainChange(Sender: TObject);
 begin
   if pgMain.ActivePage = tsNomes then
-    frmNomes.GarantirConsultaAtiva
-  else if pgMain.ActivePage = tsCidades then
-    frmCidades.GarantirConsultaAtiva;
+    frmNomes.GarantirConsultaAtiva;
+ // else if pgMain.ActivePage = tsCidades then
+//    frmCidades.GarantirConsultaAtiva;
 end;
 
 end.

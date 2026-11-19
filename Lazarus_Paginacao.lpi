@@ -73,13 +73,6 @@
         <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
-        <Filename Value="src/ufrmcidades.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmCidades"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit>
-      <Unit>
         <Filename Value="src/Model/umodelbase.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="uModelBase"/>
@@ -90,11 +83,6 @@
         <UnitName Value="uNomesModel"/>
       </Unit>
       <Unit>
-        <Filename Value="src/Model/ucidadesmodel.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="uCidadesModel"/>
-      </Unit>
-      <Unit>
         <Filename Value="src/Controller/ucontrollerbase.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="uControllerBase"/>
@@ -103,11 +91,6 @@
         <Filename Value="src/Controller/unomescontroller.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="uNomesController"/>
-      </Unit>
-      <Unit>
-        <Filename Value="src/Controller/ucidadescontroller.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="uCidadesController"/>
       </Unit>
       <Unit>
         <Filename Value="src/View/urealcepesquisadbgrid.pas"/>
@@ -148,6 +131,16 @@
         <Filename Value="src/View/uordenacaodbgrid.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="uOrdenacaoDBGrid"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/Controller/upaginacao.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uPaginacao"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src/View/upaginacaoview.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uPaginacaoView"/>
       </Unit>
     </Units>
   </ProjectOptions>

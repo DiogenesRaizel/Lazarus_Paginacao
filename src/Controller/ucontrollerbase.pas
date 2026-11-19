@@ -5,8 +5,8 @@ unit uControllerBase;
 interface
 
 uses
-  Controls, ExtCtrls, DBGrids, Classes, SysUtils, DB, SQLDB,
-  uPaginadorSQL, uPaginacaoDBGrid, uModelBase, Dialogs, uTiposCadastro;
+  Controls, Classes, SysUtils, DB, SQLDB, LCLType,
+  uPaginacao, uModelBase, Dialogs, uTiposCadastro;
 
 type
 
@@ -15,34 +15,48 @@ type
   TControllerBase = class
   protected
     FModel: TModelBase;
-    FPaginador: TPaginadorSQL;
-    FPaginacao: TPaginacaoDBGrid;
-    FGrade: TDBGrid;
+
+    // Estado da paginação.
+    FEstadoPaginacao: TPaginacao;
+
+    // Estado do Controller.
     FModoCadastro: TModoCadastro;
+    FCampoOrdenacao: string;
+    FOrdemAscendente: Boolean;
 
     function GetDataSet: TDataSet;
     function GetIdentificador: string;
 
-    procedure ConfigurarPaginador;
+    procedure AbrirPaginaAtual;
     procedure ExecutarConsultaSemPaginacao;
-    procedure AtualizarTitulosOrdenacao(Sender: TObject);
 
   public
-    constructor Create(AModel: TModelBase; APainel: TPanel; AGrade: TDBGrid);
+    constructor Create(AModel: TModelBase);
     destructor Destroy; override;
 
-    function PosicaoRegistroAtual: Integer;
+    function PosicaoRegistroAtual: Int64;
 
     procedure Inicializar;
     procedure AtualizarConsulta;
     procedure Pesquisar(const Valor: string);
     procedure OrdenarPorCampo(const ACampo: string);
     procedure TratarAtalho(var Key: Word; Shift: TShiftState);
+
+    // Navegação da paginação.
+    procedure IrParaPrimeiraPagina;
+    procedure IrParaPaginaAnterior;
+    procedure IrParaProximaPagina;
+    procedure IrParaUltimaPagina;
+    procedure AlterarLimitePorPagina(ALimite: Integer);
+    procedure IrParaPagina(APagina: Integer);
+
+    // Navegação do registro no DataSet.
     procedure Primeiro;
     procedure Anterior;
     procedure Proximo;
     procedure Ultimo;
 
+    // Modos de cadastro.
     procedure IniciarInclusao;
     procedure IniciarEdicao;
     procedure ConfirmarOperacao;
@@ -50,65 +64,47 @@ type
     procedure NavegarTabela;
     procedure AbrirCadastro;
 
+    // Restauração da consulta.
     procedure RestaurarConsulta(AID: Int64);
     procedure RestaurarAposInclusao(AIDNovo, AIDAnterior: Int64);
     procedure RestaurarAposExclusao(APosicao: Integer);
     procedure GarantirConsultaAtiva(AID: Int64);
 
-    property Paginacao: TPaginacaoDBGrid read FPaginacao;
+    property EstadoPaginacao: TPaginacao read FEstadoPaginacao;
     property DataSet: TDataSet read GetDataSet;
     property Identificador: string read GetIdentificador;
     property ModoCadastro: TModoCadastro read FModoCadastro;
-  end;
 
+    property CampoOrdenacao: string read FCampoOrdenacao;
+    property OrdemAscendente: Boolean read FOrdemAscendente;
+  end;
 
 implementation
 
-constructor TControllerBase.Create(AModel: TModelBase; APainel: TPanel; AGrade: TDBGrid);
+{ TControllerBase }
+
+constructor TControllerBase.Create(AModel: TModelBase);
 begin
   inherited Create;
 
   if AModel = nil then
     raise Exception.Create('O Model não foi informado.');
 
-  if AGrade = nil then
-    raise Exception.Create('A DBGrid não foi informada.');
-
   FModel := AModel;
-  FGrade := AGrade;
-  FPaginacao := nil;
-  FPaginador := nil;
+
+  FEstadoPaginacao := TPaginacao.Create;
 
   FModoCadastro := mcNavegandoTabela;
 
-  if APainel <> nil then
-  begin
-    FPaginacao := TPaginacaoDBGrid.Create(APainel);
-
-    try
-      FPaginador := TPaginadorSQL.Create(FModel.Consulta, FPaginacao, AGrade);
-      FPaginador.OnPrepararConsulta := @FModel.PrepararConsulta;
-      FPaginador.OnAtualizarInterface := @AtualizarTitulosOrdenacao;
-    except
-      FreeAndNil(FPaginacao);
-      raise;
-    end;
-  end;
+  FCampoOrdenacao := FModel.OrdenarPor;
+  FOrdemAscendente := True;
 end;
 
 destructor TControllerBase.Destroy;
 begin
-  FreeAndNil(FPaginador);
-  FreeAndNil(FPaginacao);
+  FreeAndNil(FEstadoPaginacao);
+
   inherited Destroy;
-end;
-
-function TControllerBase.PosicaoRegistroAtual: Integer;
-begin
-  Result := -1;
-
-  if FPaginador <> nil then
-    Result := FPaginador.PosicaoRegistroAtual;
 end;
 
 function TControllerBase.GetDataSet: TDataSet;
@@ -121,20 +117,62 @@ begin
   Result := FModel.Identificador;
 end;
 
-procedure TControllerBase.ConfigurarPaginador;
+function TControllerBase.PosicaoRegistroAtual: Int64;
+var
+  IDAtual: Int64;
+  PosicaoLocal: Int64;
 begin
-  if FPaginador = nil then
+  Result := -1;
+
+  if not DataSet.Active or DataSet.IsEmpty then
     Exit;
 
-  FPaginador.CampoIdentificador := FModel.Identificador;
-  FPaginador.SQLBase := FModel.SQLBase;
-  FPaginador.SQLContagem := FModel.SQLContagem;
+  IDAtual := DataSet.FieldByName(
+    FModel.Identificador
+  ).AsLargeInt;
 
-  if Trim(FPaginador.OrdenarPor) = '' then
-    FPaginador.OrdenarPor := FModel.OrdenarPor;
+  PosicaoLocal := 0;
 
-  FPaginador.OnPrepararConsulta := @FModel.PrepararConsulta;
-  FPaginador.OnAtualizarInterface := @AtualizarTitulosOrdenacao;
+  DataSet.First;
+
+  while not DataSet.EOF do
+  begin
+    Inc(PosicaoLocal);
+
+    if DataSet.FieldByName(
+      FModel.Identificador
+    ).AsLargeInt = IDAtual then
+      Break;
+
+    DataSet.Next;
+  end;
+
+  if not DataSet.EOF then
+  begin
+    if FEstadoPaginacao <> nil then
+      Result := FEstadoPaginacao.Offset + PosicaoLocal
+    else
+      Result := PosicaoLocal;
+  end;
+
+  // Restaurar o registro selecionado.
+  DataSet.Locate(FModel.Identificador, IDAtual, []);
+end;
+
+procedure TControllerBase.AbrirPaginaAtual;
+begin
+  if FEstadoPaginacao = nil then
+  begin
+    ExecutarConsultaSemPaginacao;
+    Exit;
+  end;
+
+  FModel.AbrirPagina(
+    FEstadoPaginacao.LimitePorPagina,
+    FEstadoPaginacao.Offset,
+    FCampoOrdenacao,
+    FOrdemAscendente
+  );
 end;
 
 procedure TControllerBase.ExecutarConsultaSemPaginacao;
@@ -145,129 +183,229 @@ begin
 
   SQL := Trim(FModel.SQLBase);
 
+  while (SQL <> '') and (SQL[Length(SQL)] = ';') do
+    Delete(SQL, Length(SQL), 1);
+
   if Trim(FModel.OrdenarPor) <> '' then
     SQL := SQL + ' ORDER BY ' + FModel.OrdenarPor;
 
   FModel.Consulta.SQL.Text := SQL;
-  FModel.PrepararConsulta(Self, FModel.Consulta);
+
+  FModel.PrepararConsulta(
+    Self,
+    FModel.Consulta
+  );
+
   FModel.Consulta.Open;
-end;
-
-procedure TControllerBase.AtualizarTitulosOrdenacao(Sender: TObject);
-var
-  I: Integer;
-  Titulo, Seta: string;
-begin
-  if (FGrade = nil) or (FPaginador = nil) then
-    Exit;
-
-  for I := 0 to FGrade.Columns.Count - 1 do
-  begin
-    Titulo := StringReplace(
-      FGrade.Columns[I].FieldName,
-      '_', ' ', [rfReplaceAll]
-    );
-
-    if SameText(
-      FGrade.Columns[I].FieldName,
-      FPaginador.CampoOrdenacao
-    ) then
-    begin
-      if FPaginador.OrdemAscendente then
-        Seta := '↓ '
-      else
-        Seta := '↑ ';
-
-      Titulo := Seta + Titulo;
-    end;
-
-    FGrade.Columns[I].Title.Caption := Titulo;
-  end;
 end;
 
 procedure TControllerBase.Inicializar;
 begin
-  if FPaginador <> nil then
-  begin
-    ConfigurarPaginador;
-    FPaginador.Abrir;
-  end
-  else
-    ExecutarConsultaSemPaginacao;
+  AtualizarConsulta;
 end;
 
 procedure TControllerBase.AtualizarConsulta;
 begin
-  if FPaginador <> nil then
+  if FEstadoPaginacao = nil then
   begin
-    ConfigurarPaginador;
-    FPaginador.Abrir;
-  end
-  else
     ExecutarConsultaSemPaginacao;
+    Exit;
+  end;
+
+  FEstadoPaginacao.DefinirTotalRegistros(
+    FModel.ContarRegistros
+  );
+
+  AbrirPaginaAtual;
 end;
 
 procedure TControllerBase.Pesquisar(const Valor: string);
 begin
   FModel.DefinirFiltro(Valor);
 
-  if FPaginador <> nil then
-  begin
-    ConfigurarPaginador;
-    FPaginador.Reiniciar;
-  end
-  else
-    ExecutarConsultaSemPaginacao;
+  if FEstadoPaginacao <> nil then
+    FEstadoPaginacao.Primeira;
+
+  AtualizarConsulta;
 end;
 
 procedure TControllerBase.OrdenarPorCampo(const ACampo: string);
+var
+  IDAtual: Int64;
+  Posicao: Int64;
+  Pagina: Integer;
 begin
-  if (FPaginador = nil) or not FModel.Consulta.Active then
+  if not FModel.Consulta.Active then
     Exit;
+
+  if FModel.Consulta.IsEmpty then
+    IDAtual := 0
+  else
+    IDAtual := FModel.Consulta.FieldByName(
+      FModel.Identificador
+    ).AsLargeInt;
 
   if FModel.Consulta.FindField(ACampo) = nil then
     Exit;
 
-  FPaginador.OrdenarPorCampo(ACampo);
+  if SameText(FCampoOrdenacao, ACampo) then
+    FOrdemAscendente := not FOrdemAscendente
+  else
+  begin
+    FCampoOrdenacao := ACampo;
+    FOrdemAscendente := True;
+  end;
+
+  if FEstadoPaginacao = nil then
+  begin
+    ExecutarConsultaSemPaginacao;
+
+    if IDAtual > 0 then
+      DataSet.Locate(FModel.Identificador, IDAtual, []);
+
+    Exit;
+  end;
+
+  if IDAtual > 0 then
+  begin
+    Posicao := FModel.LocalizarPosicao(
+      IDAtual,
+      FCampoOrdenacao,
+      FOrdemAscendente
+    );
+
+    Pagina := FEstadoPaginacao.PaginaDaPosicao(Posicao);
+
+    if Pagina >= 0 then
+      FEstadoPaginacao.IrPara(Pagina)
+    else
+      FEstadoPaginacao.Primeira;
+  end
+  else
+    FEstadoPaginacao.Primeira;
+
+  AbrirPaginaAtual;
+
+  if IDAtual > 0 then
+    DataSet.Locate(FModel.Identificador, IDAtual, []);
 end;
 
-procedure TControllerBase.TratarAtalho(var Key: Word; Shift: TShiftState);
+procedure TControllerBase.TratarAtalho(
+  var Key: Word; Shift: TShiftState);
 begin
-  if FPaginador <> nil then
-    FPaginador.TratarAtalho(Key, Shift);
+  if not (ssCtrl in Shift) or (FEstadoPaginacao = nil) then
+    Exit;
+
+  case Key of
+    VK_LEFT:
+      Anterior;
+
+    VK_RIGHT:
+      Proximo;
+
+    VK_HOME:
+      IrParaPrimeiraPagina;
+
+    VK_END:
+      IrParaUltimaPagina;
+  else
+    Exit;
+  end;
+
+  Key := 0;
 end;
+
+{ Navegação da paginação }
+
+procedure TControllerBase.IrParaPrimeiraPagina;
+begin
+  if FEstadoPaginacao = nil then
+    Exit;
+
+  FEstadoPaginacao.Primeira;
+  AbrirPaginaAtual;
+end;
+
+procedure TControllerBase.IrParaPaginaAnterior;
+begin
+  if FEstadoPaginacao = nil then
+    Exit;
+
+  FEstadoPaginacao.Anterior;
+  AbrirPaginaAtual;
+end;
+
+procedure TControllerBase.IrParaProximaPagina;
+begin
+  if FEstadoPaginacao = nil then
+    Exit;
+
+  FEstadoPaginacao.Proxima;
+  AbrirPaginaAtual;
+end;
+
+procedure TControllerBase.IrParaUltimaPagina;
+begin
+  if FEstadoPaginacao = nil then
+    Exit;
+
+  FEstadoPaginacao.Ultima;
+  AbrirPaginaAtual;
+end;
+
+procedure TControllerBase.AlterarLimitePorPagina(ALimite: Integer);
+begin
+  if FEstadoPaginacao = nil then
+    Exit;
+
+  FEstadoPaginacao.AlterarLimite(ALimite);
+  AtualizarConsulta;
+end;
+
+procedure TControllerBase.IrParaPagina(APagina: Integer);
+begin
+  if FEstadoPaginacao = nil then
+    Exit;
+
+  if FEstadoPaginacao.IrPara(APagina) then
+    AbrirPaginaAtual;
+end;
+
+{ Navegação do registro dentro do DataSet }
 
 procedure TControllerBase.Primeiro;
 begin
-  if not FModel.Consulta.Active or FModel.Consulta.IsEmpty then
+  if not DataSet.Active or DataSet.IsEmpty then
     Exit;
 
-  FModel.Consulta.First;
+  DataSet.First;
 end;
 
 procedure TControllerBase.Anterior;
 begin
-  if not FModel.Consulta.Active or FModel.Consulta.IsEmpty then
+  if not DataSet.Active or DataSet.IsEmpty then
     Exit;
 
-  FModel.Consulta.Prior;
+  DataSet.Prior;
 end;
 
 procedure TControllerBase.Proximo;
 begin
-  if not FModel.Consulta.Active or FModel.Consulta.IsEmpty then
+  if not DataSet.Active or DataSet.IsEmpty then
     Exit;
 
-  FModel.Consulta.Next;
+  DataSet.Next;
 end;
 
 procedure TControllerBase.Ultimo;
 begin
-  if not FModel.Consulta.Active or FModel.Consulta.IsEmpty then
+  if not DataSet.Active or DataSet.IsEmpty then
     Exit;
 
-  FModel.Consulta.Last;
+  DataSet.Last;
 end;
+
+{ Modos de cadastro }
 
 procedure TControllerBase.IniciarInclusao;
 begin
@@ -317,55 +455,168 @@ begin
   FModoCadastro := mcNavegandoCadastro;
 end;
 
-procedure TControllerBase.RestaurarConsulta(AID: Int64);
-begin
-  if FPaginador <> nil then
-  begin
-    ConfigurarPaginador;
+{ Restauração da consulta }
 
-    if AID > 0 then
-      FPaginador.AbrirNoRegistro(AID)
-    else
-      FPaginador.Abrir;
-  end
-  else
+procedure TControllerBase.RestaurarConsulta(AID: Int64);
+var
+  Posicao: Int64;
+  Pagina: Integer;
+begin
+  if FEstadoPaginacao = nil then
   begin
     AtualizarConsulta;
 
     if (AID > 0) and DataSet.Active then
       DataSet.Locate(FModel.Identificador, AID, []);
+
+    Exit;
   end;
+
+  FEstadoPaginacao.DefinirTotalRegistros(
+    FModel.ContarRegistros
+  );
+
+  if AID > 0 then
+  begin
+    Posicao := FModel.LocalizarPosicao(
+      AID,
+      FCampoOrdenacao,
+      FOrdemAscendente
+    );
+
+    Pagina := FEstadoPaginacao.PaginaDaPosicao(Posicao);
+
+    if Pagina >= 0 then
+      FEstadoPaginacao.IrPara(Pagina)
+    else
+      FEstadoPaginacao.Primeira;
+  end
+  else
+    FEstadoPaginacao.Primeira;
+
+  AbrirPaginaAtual;
+
+  if (AID > 0) and DataSet.Active then
+    DataSet.Locate(FModel.Identificador, AID, []);
 end;
 
-procedure TControllerBase.RestaurarAposInclusao(AIDNovo, AIDAnterior: Int64);
+procedure TControllerBase.RestaurarAposInclusao(
+  AIDNovo, AIDAnterior: Int64);
+var
+  PaginaAnterior: Integer;
+  PaginaNova: Integer;
+  Posicao: Int64;
+  IDSelecionado: Int64;
 begin
-  if FPaginador <> nil then
+  if FEstadoPaginacao = nil then
   begin
-    ConfigurarPaginador;
-    FPaginador.AbrirAposInclusao(AIDNovo, AIDAnterior);
+    AtualizarConsulta;
+
+    if (AIDNovo > 0) and
+      DataSet.Locate(FModel.Identificador, AIDNovo, []) then
+      Exit;
+
+    if AIDAnterior > 0 then
+      DataSet.Locate(FModel.Identificador, AIDAnterior, []);
+
     Exit;
   end;
 
-  AtualizarConsulta;
+  PaginaAnterior := FEstadoPaginacao.PaginaAtual;
 
-  if (AIDNovo > 0) and DataSet.Active and
-    DataSet.Locate(FModel.Identificador, AIDNovo, []) then
-    Exit;
+  FEstadoPaginacao.DefinirTotalRegistros(
+    FModel.ContarRegistros
+  );
 
-  if (AIDAnterior > 0) and DataSet.Active then
-    DataSet.Locate(FModel.Identificador, AIDAnterior, []);
+  IDSelecionado := AIDAnterior;
+
+  if AIDNovo > 0 then
+  begin
+    Posicao := FModel.LocalizarPosicao(
+      AIDNovo,
+      FCampoOrdenacao,
+      FOrdemAscendente
+    );
+
+    PaginaNova := FEstadoPaginacao.PaginaDaPosicao(Posicao);
+
+    if PaginaNova = PaginaAnterior then
+    begin
+      FEstadoPaginacao.IrPara(PaginaNova);
+      IDSelecionado := AIDNovo;
+    end
+    else if AIDAnterior > 0 then
+    begin
+      Posicao := FModel.LocalizarPosicao(
+        AIDAnterior,
+        FCampoOrdenacao,
+        FOrdemAscendente
+      );
+
+      PaginaNova := FEstadoPaginacao.PaginaDaPosicao(Posicao);
+
+      if PaginaNova >= 0 then
+        FEstadoPaginacao.IrPara(PaginaNova)
+      else
+        IDSelecionado := 0;
+    end;
+  end;
+
+  AbrirPaginaAtual;
+
+  if IDSelecionado > 0 then
+    DataSet.Locate(FModel.Identificador, IDSelecionado, []);
 end;
 
 procedure TControllerBase.RestaurarAposExclusao(APosicao: Integer);
+var
+  Posicao: Int64;
+  Pagina: Integer;
+  PosicaoLocal: Integer;
 begin
-  if FPaginador <> nil then
+  if FEstadoPaginacao = nil then
   begin
-    ConfigurarPaginador;
-    FPaginador.AbrirAposExclusao(APosicao);
+    AtualizarConsulta;
     Exit;
   end;
 
-  AtualizarConsulta;
+  FEstadoPaginacao.DefinirTotalRegistros(
+    FModel.ContarRegistros
+  );
+
+  if FEstadoPaginacao.TotalRegistros = 0 then
+  begin
+    FEstadoPaginacao.Primeira;
+    AbrirPaginaAtual;
+    Exit;
+  end;
+
+  Posicao := APosicao;
+
+  if Posicao < 1 then
+    Posicao := 1;
+
+  if Posicao > FEstadoPaginacao.TotalRegistros then
+    Posicao := FEstadoPaginacao.TotalRegistros;
+
+  Pagina := FEstadoPaginacao.PaginaDaPosicao(Posicao);
+
+  if Pagina >= 0 then
+    FEstadoPaginacao.IrPara(Pagina);
+
+  AbrirPaginaAtual;
+
+  // Selecionar o registro que ocupou a posição excluída.
+  PosicaoLocal := (Posicao - 1) mod
+    FEstadoPaginacao.LimitePorPagina;
+
+  if DataSet.Active and not DataSet.IsEmpty then
+  begin
+    DataSet.First;
+
+    if PosicaoLocal > 0 then
+      DataSet.MoveBy(PosicaoLocal);
+  end;
 end;
 
 procedure TControllerBase.GarantirConsultaAtiva(AID: Int64);
@@ -374,4 +625,4 @@ begin
     RestaurarConsulta(AID);
 end;
 
-end.
+end.end.

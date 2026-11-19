@@ -5,8 +5,8 @@ unit uNomesController;
 interface
 
 uses
-  SysUtils, Controls, DBGrids, ExtCtrls,
-  uControllerBase, uNomesModel, uCidadesModel, uTiposPesquisa;
+  SysUtils, ExtCtrls,
+  uControllerBase, uNomesModel, uCidadesModel, uTiposPesquisa, uTiposCadastro;
 
 type
 
@@ -19,7 +19,7 @@ type
 
   public
     constructor Create(AModel: TNomesModel; ACidadesModel: TCidadesModel;
-      APainel: TPanel; AGrade: TDBGrid);
+      APainel: TPanel);
 
     function ConsultarSugestoesCidade(const Valor: string): TSugestaoPesquisaArray;
     function Inserir(const ANome: string; ACidadeID: Integer): Int64;
@@ -31,7 +31,7 @@ type
 implementation
 
 constructor TNomesController.Create(AModel: TNomesModel;
-  ACidadesModel: TCidadesModel; APainel: TPanel; AGrade: TDBGrid);
+  ACidadesModel: TCidadesModel; APainel: TPanel);
 begin
   if AModel = nil then
     raise Exception.Create('O Model de nomes não foi informado.');
@@ -39,7 +39,9 @@ begin
   if ACidadesModel = nil then
     raise Exception.Create('O Model de cidades não foi informado.');
 
-  inherited Create(AModel, APainel, AGrade);
+//  inherited Create(AModel, APainel);
+  inherited Create(AModel);
+
 
   FNomesModel := AModel;
   FCidadesModel := ACidadesModel;

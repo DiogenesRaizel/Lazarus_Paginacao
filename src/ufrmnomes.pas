@@ -5,10 +5,10 @@ unit ufrmnomes;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, DBGrids,
+  Classes, SysUtils, Forms, DBGrids, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, DB, LCLType, uDM, uNomesController,
   uRealcePesquisaDBGrid, uTiposPesquisa, uPesquisaEdit,
-  uVisualizacaoCadastro, uTiposCadastro, Types, uOrdenacaoDBGrid;
+  uVisualizacaoCadastro, uTiposCadastro, Types, uOrdenacaoDBGrid, uPaginacaoView;
 
 type
   { TfrmNomes }
@@ -70,6 +70,7 @@ type
     FPesquisaCidade: TPesquisaEdit;
     FIDRegistroAtual: Int64;
     FCarregandoCadastro: Boolean;
+    FPaginacaoView: TPaginacaoView;
     function ConsultarSugestoesCidade(const Valor: string): TSugestaoPesquisaArray;
     procedure MostrarCadastro;
     procedure LimparCadastro;
@@ -135,8 +136,7 @@ begin
   FPesquisaCidade.OnAlteracaoTexto := @VerificarAlteracao;
 
   // Controller
-  FController := TNomesController.Create(DM.NomesModel, DM.CidadesModel,
-    pnNavigator, dbgNomes);
+  FController := TNomesController.Create(DM.NomesModel, DM.CidadesModel);
 
   // DataSource e eventos
   dsNomes.OnDataChange := @dsNomesDataChange;
@@ -149,17 +149,23 @@ begin
   // Inicialização da consulta
   FController.Inicializar;
 
+  // Paginação visual
+  FPaginacaoView := TPaginacaoView.Create(pnNavigator, FController);
+
   // Estado inicial do status bar
   AtualizarStatus('Navegando');
 
   // Configura as colunas da DBGrid
   FOrdenacao := TOrdenacaoDBGrid.Create(dbgNomes);
+  FOrdenacao.Atualizar(FController.CampoOrdenacao,
+    FController.OrdemAscendente);
 end;
 
 procedure TfrmNomes.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(FPesquisaCidade);
   FreeAndNil(FRealce);
+  FreeAndNil(FPaginacaoView);
   FreeAndNil(FController);
   FreeAndNil(FVisualizacao);
   FreeAndNil(FOrdenacao);
@@ -293,8 +299,13 @@ end;
 
 procedure TfrmNomes.dbgNomesTitleClick(Column: TColumn);
 begin
-  if FController <> nil then
-    FController.OrdenarPorCampo(Column.FieldName);
+  if (FController = nil) or (FOrdenacao = nil) then
+    Exit;
+
+  FController.OrdenarPorCampo(Column.FieldName);
+
+  FOrdenacao.Atualizar(FController.CampoOrdenacao,
+    FController.OrdemAscendente);
 end;
 
 procedure TfrmNomes.dsNomesDataChange(Sender: TObject; Field: TField);
